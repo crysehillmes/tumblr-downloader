@@ -6,12 +6,14 @@ import urllib.request
 class ImageUrlDetector(object):
     blogName = ''
     startPosition = 0
+    endPosition = -1
     proxyAddress = ''
     pictureUrlList = []
 
-    def __init__(self, blogname, startposition, proxyaddress):
+    def __init__(self, blogname, startposition, endposition, proxyaddress):
         self.blogName = blogname
         self.startPosition = startposition
+        self.endPosition = endposition
         self.proxyAddress = proxyaddress
 
     def detect(self):
@@ -35,7 +37,7 @@ class ImageUrlDetector(object):
         while True:
             posturl = 'http://api.tumblr.com/v2/blog/' + blogname + '.tumblr.com/posts/photo?offset=' + str(offset)
             postrequest = urllib.request.Request(posturl)
-            postresponse = urllib.request.urlopen(postrequest)
+            postresponse = urllib.request.urlopen(postrequest, timeout=20)
             postresstring = postresponse.read().decode('utf8')
             postdata = json.loads(postresstring)
             posts = postdata['response']['posts']
@@ -50,6 +52,8 @@ class ImageUrlDetector(object):
                 # imageurl = photodata['original_size']['url']
                 # self.pictureUrlList.append(imageurl)
             offset += 20
+            if self.endPosition != -1 and offset >= self.endPosition:
+                break
             if(partpostscount < 20):
                 break
         # print('Find ' + str(len(self.pictureUrlList)) + ' images.')
