@@ -1,4 +1,5 @@
 import json
+import socket
 import urllib
 import urllib.request
 
@@ -28,16 +29,26 @@ class ImageUrlDetector(object):
 
         inforequest = urllib.request.Request(baseurl)
         inforesponse = urllib.request.urlopen(inforequest)
-        inforesstring = inforesponse.read().decode('utf8')
+        inforesstring = inforesponse.read().decode('utf8', 'ignore')
         bloginfo = json.loads(inforesstring)
         blogtitle = bloginfo['response']['blog']['title']
         blogpostscount = bloginfo['response']['blog']['posts']
-        print('Blog (' + blogtitle + ') has ' + str(blogpostscount) + ' posts.')
+        try:
+            if not blogtitle:
+                print('Blog (' + blogtitle + ') has ' + str(blogpostscount) + ' posts.')
+            else:
+                print('Blog (' + blogname + ') has ' + str(blogpostscount) + ' posts.')
+        except UnicodeEncodeError:
+            print('Blog (' + blogname + ') has ' + str(blogpostscount).encode('GB18030', 'ignore').decode('GB18030', 'ignore') + ' posts.')
         offset = self.startPosition
         while True:
             posturl = 'http://api.tumblr.com/v2/blog/' + blogname + '.tumblr.com/posts/photo?offset=' + str(offset)
             postrequest = urllib.request.Request(posturl)
-            postresponse = urllib.request.urlopen(postrequest, timeout=20)
+            try:
+                postresponse = urllib.request.urlopen(postrequest, timeout=20)
+            except socket.timeout:
+                print('Detecting posts from ' + str(offset) + ' failed: socket time out.')
+                continue
             postresstring = postresponse.read().decode('utf8')
             postdata = json.loads(postresstring)
             posts = postdata['response']['posts']
