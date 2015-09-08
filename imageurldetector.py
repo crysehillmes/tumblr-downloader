@@ -1,5 +1,4 @@
 import json
-import socket
 import urllib
 import urllib.request
 
@@ -10,6 +9,7 @@ class ImageUrlDetector(object):
     endPosition = -1
     proxyAddress = ''
     pictureUrlList = []
+    failedList = []
 
     def __init__(self, blogname, startposition, endposition, proxyaddress):
         self.blogName = blogname
@@ -45,11 +45,12 @@ class ImageUrlDetector(object):
             posturl = 'http://api.tumblr.com/v2/blog/' + blogname + '.tumblr.com/posts/photo?offset=' + str(offset)
             postrequest = urllib.request.Request(posturl)
             try:
-                postresponse = urllib.request.urlopen(postrequest, timeout=20)
-            except socket.timeout:
-                print('Detecting posts from ' + str(offset) + ' failed: socket time out.')
+                postresponse = urllib.request.urlopen(postrequest, timeout=40)
+                postresstring = postresponse.read().decode('utf8')
+            except Exception as ex:
+                print('Detecting posts from ' + str(offset) + ' failed: ', ex)
+                self.failedList.append(offset)
                 continue
-            postresstring = postresponse.read().decode('utf8')
             postdata = json.loads(postresstring)
             posts = postdata['response']['posts']
             partpostscount = len(posts)
